@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Full-bleed source for the iOS app icon (iOS applies its own corner mask) -->
+  <rect width="1024" height="1024" fill="#000"/>
+  <g fill="#fff">
+    <rect x="176" y="376" width="60" height="140" rx="30"/>
+    <rect x="278" y="336" width="60" height="264" rx="30"/>
+    <rect x="380" y="296" width="60" height="388" rx="30"/>
+    <rect x="482" y="256" width="60" height="512" rx="30"/>
+    <rect x="584" y="296" width="60" height="388" rx="30"/>
+    <rect x="686" y="336" width="60" height="264" rx="30"/>
+    <rect x="788" y="376" width="60" height="140" rx="30"/>
+  </g>
+</svg>

@@ -1,0 +1,64 @@
+name: VoiceMode
+options:
+  bundleIdPrefix: com.sharanyalburgi
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+packages:
+  ZIPFoundation:
+    url: https://github.com/weichsel/ZIPFoundation
+    from: 0.9.19
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+targets:
+  VoiceMode:
+    type: application
+    platform: iOS
+    sources:
+      - path: VoiceMode
+      - path: Generated/Secrets.swift
+        optional: true
+    dependencies:
+      - package: ZIPFoundation
+    preBuildScripts:
+      - name: Generate Secrets
+        script: '"$SRCROOT/scripts/generate-secrets.sh"'
+        basedOnDependencyAnalysis: false
+        outputFiles:
+          - $(SRCROOT)/Generated/Secrets.swift
+    info:
+      path: VoiceMode/Info.plist
+      properties:
+        CFBundleDisplayName: Voice Mode
+        UILaunchScreen: {}
+        UIBackgroundModes: [audio]
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sharanyalburgi.voicemode
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1"
+  VoiceModeTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: VoiceModeTests
+    dependencies:
+      - target: VoiceMode
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  VoiceMode:
+    build:
+      targets:
+        VoiceMode: all
+        VoiceModeTests: [test]
+    test:
+      targets:
+        - VoiceModeTests
