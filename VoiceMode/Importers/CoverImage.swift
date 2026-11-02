@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 nonisolated enum CoverImage {
     static let maxPixelSize = 600
 
-    static func thumbnail(from data: Data) -> Data? {
+    static func thumbnail(from data: Data, maxPixelSize: Int = maxPixelSize) -> Data? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
               let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
                   kCGImageSourceCreateThumbnailFromImageAlways: true,

@@ -22,6 +22,12 @@ final class Book {
     var llmTokens: Int = 0
     var generatedParagraphs: Int = 0
 
+    /// Names this book's folder of people and organisations (see `EntityFolder`); assigned on first use.
+    var entityFolder: String = ""
+    /// What finding, researching and illustrating people and organisations has cost.
+    var entityCostUSD: Double = 0
+    var entityTokens: Int = 0
+
     init(document: Document, source: String) {
         title = document.title
         author = document.author
@@ -55,6 +61,16 @@ final class Book {
         llmCostUSD += cost.llmUSD
         llmTokens += cost.llmTokens
         generatedParagraphs += 1
+    }
+
+    func recordEntityUsage(_ usage: LLMUsage) {
+        entityCostUSD += usage.usd
+        entityTokens += usage.tokens
+    }
+
+    func entityFolderKey() -> String {
+        if entityFolder.isEmpty { entityFolder = UUID().uuidString }
+        return entityFolder
     }
 
     /// When the book was last touched, for "most recent first" ordering.

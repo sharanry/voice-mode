@@ -33,7 +33,7 @@ struct BookCostCard: View {
                     .clipShape(RoundedRectangle(cornerRadius: 3))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(book.title).font(.headline).lineLimit(2)
-                    Text("Narration cost").font(.subheadline).foregroundStyle(.secondary)
+                    Text("Generation cost").font(.subheadline).foregroundStyle(.secondary)
                 }
             }
 
@@ -41,13 +41,14 @@ struct BookCostCard: View {
 
             costRow("Text to speech", detail: "ElevenLabs \(ElevenLabsProvider.activeModelName) · \(book.ttsCredits.formatted()) credits", usd: ttsUSD)
             costRow("Expression (LLM)", detail: "Qwen via OpenRouter · \(book.llmTokens.formatted()) tokens", usd: book.llmCostUSD)
+            costRow("People & organizations", detail: "Qwen list, GLM cards, Recraft images · \(book.entityTokens.formatted()) tokens", usd: book.entityCostUSD)
 
             Divider()
 
             HStack {
                 Text("Total").font(.headline)
                 Spacer()
-                Text(Pricing.format(ttsUSD + book.llmCostUSD)).font(.headline.monospacedDigit())
+                Text(Pricing.format(ttsUSD + book.llmCostUSD + book.entityCostUSD)).font(.headline.monospacedDigit())
             }
 
             Text("\(book.generatedParagraphs.formatted()) paragraphs generated. Replays come from the cache and are free. Credits priced at \(Pricing.format(ratePer1K)) per 1,000.")

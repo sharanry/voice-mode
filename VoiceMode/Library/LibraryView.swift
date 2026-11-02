@@ -33,6 +33,7 @@ struct LibraryView: View {
                                         Button("Cost Details", systemImage: "dollarsign.circle") { costBook = book }
                                         Button("Delete", systemImage: "trash", role: .destructive) {
                                             if book.persistentModelID == playback.book?.persistentModelID { playback.player?.stop() }
+                                            if !book.entityFolder.isEmpty { EntityFolder(key: book.entityFolder).remove() }
                                             context.delete(book)
                                         }
                                     } preview: {

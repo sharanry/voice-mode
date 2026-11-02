@@ -7,6 +7,7 @@ final class ReaderModel {
     let book: Book
     let document: Document
     let player: NarrationPlayer
+    let entities: EntityStore
     private let session: PlaybackSession
     /// UTF-16 offset where each chapter starts in the whole book, plus the total length at the end.
     let chapterStarts: [Int]
@@ -27,8 +28,10 @@ final class ReaderModel {
         self.document = document
         self.session = session
         player = session.player(for: book, document: document)
-        // Reopening the book that's narrating: start on the sentence being spoken.
-        let start = player.isEngaged ? player.position ?? book.position : book.position
+        entities = EntityStore(book: book, document: document)
+        // Always reopen on the last open page. While narration plays the book's position follows
+        // the voice, so this is also where the audio is; once paused, it's wherever you read to.
+        let start = book.position
         chapterIndex = min(max(start.chapter, 0), document.chapters.count - 1)
         restoreOffset = start.offset
         chapterStarts = document.chapters.reduce(into: [0]) { $0.append($0.last! + ($1.text as NSString).length) }
@@ -38,6 +41,7 @@ final class ReaderModel {
     /// and writing to the book there re-renders the library, which constructs it again.
     func didOpen() {
         book.lastOpenedAt = .now
+        entities.prepare()
     }
 
     var chapter: Chapter { document.chapters[chapterIndex] }
@@ -58,6 +62,32 @@ final class ReaderModel {
         let clipped = NSIntersectionRange(sentences[index], page)
         guard clipped.length > 0 else { return nil }
         return NSRange(location: clipped.location - page.location, length: clipped.length)
+    }
+
+    // MARK: People and organisations
+
+    /// Mentions on the current page, relative to the page.
+    var pageMentions: [Mention] {
+        guard let page = currentPage else { return [] }
+        return entities.mentions(inChapter: chapterIndex).compactMap { mention in
+            let clipped = NSIntersectionRange(mention.range, page)
+            guard clipped.length > 0 else { return nil }
+            return Mention(range: NSRange(location: clipped.location - page.location, length: clipped.length), entity: mention.entity)
+        }
+    }
+
+    /// Underlines for the page: dashed for people, dotted for organisations.
+    var pageUnderlines: [PageTextView.Underline] {
+        pageMentions.map { PageTextView.Underline(range: $0.range, dotted: entities.entities[$0.entity].kind == .org) }
+    }
+
+    /// The end of the current page: cards may use the text up to here and nothing after it.
+    var readLimit: ReadingPosition {
+        ReadingPosition(chapter: chapterIndex, offset: currentPage.map(NSMaxRange) ?? position.offset)
+    }
+
+    func entity(atPageOffset offset: Int) -> Entity? {
+        pageMentions.first { NSLocationInRange(offset, $0.range) }.map { entities.entities[$0.entity] }
     }
 
     // MARK: Layout
@@ -163,7 +193,12 @@ final class ReaderModel {
     /// Reading and listening share one position: turning the page while narrating jumps the audio there.
     private func userDidNavigate() {
         savePosition()
-        if player.isActive { player.play(from: position) }
+        if player.isActive {
+            player.play(from: position)
+        } else if player.isEngaged {
+            // Paused and reading on: the next resume, from anywhere, starts on this page.
+            player.resumePosition = position
+        }
     }
 
     // MARK: Narration
@@ -174,6 +209,7 @@ final class ReaderModel {
         case .playing, .loading:
             player.pause()
         case .paused where pageContains(player.position):
+            player.resumePosition = nil // back on the paused sentence's page: just continue
             player.resume()
         default:
             player.play(from: position)

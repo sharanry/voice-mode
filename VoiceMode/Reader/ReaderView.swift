@@ -9,6 +9,10 @@ struct ReaderView: View {
     @State private var showChrome = false
     @State private var showSettings = false
     @State private var showChapters = false
+    @State private var showEntities = false
+    @State private var selectedEntity: Entity?
+    @State private var probe = PageProbe()
+    @AppStorage("entityUnderlines") private var showUnderlines = true
 
     private let horizontalMargin: CGFloat = 28
     private let topMargin: CGFloat = 36
@@ -43,8 +47,8 @@ struct ReaderView: View {
         .onAppear { model.didOpen() }
         .onDisappear { session.readerClosed(model.player) }
         .sheet(isPresented: $showSettings) {
-            ReaderSettingsSheet(theme: $theme, fontSize: $fontSize)
-                .presentationDetents([.height(230)])
+            ReaderSettingsSheet(theme: $theme, fontSize: $fontSize, showUnderlines: $showUnderlines)
+                .presentationDetents([.height(290)])
         }
         .sheet(isPresented: $showChapters) {
             ContentsSheet(chapters: model.document.chapters, current: model.currentContentsEntry) { target in
@@ -52,18 +56,35 @@ struct ReaderView: View {
                 showChapters = false
             }
         }
+        .sheet(isPresented: $showEntities) {
+            EntityListSheet(store: model.entities, limit: model.readLimit) { target in
+                model.goTo(target)
+                showEntities = false
+            }
+        }
+        .sheet(item: $selectedEntity) { entity in
+            NavigationStack {
+                EntityCardView(store: model.entities, entity: entity, limit: model.readLimit) { target in
+                    model.goTo(target)
+                    selectedEntity = nil
+                }
+            }
+            .presentationDetents([.medium, .large])
+        }
     }
 
     private var page: some View {
         GeometryReader { geo in
             let pageSize = CGSize(width: max(0, geo.size.width - horizontalMargin * 2),
                                   height: max(0, geo.size.height - topMargin))
-            PageTextView(text: model.pageText, highlight: model.pageHighlight, style: style, theme: theme, size: pageSize)
+            PageTextView(text: model.pageText, highlight: model.pageHighlight,
+                         underlines: showUnderlines ? model.pageUnderlines : [], probe: probe,
+                         style: style, theme: theme, size: pageSize)
                 .frame(width: pageSize.width, height: pageSize.height, alignment: .topLeading)
                 .padding(.top, topMargin)
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
                 .contentShape(Rectangle())
-                .onTapGesture { location in handleTap(x: location.x, width: geo.size.width) }
+                .onTapGesture { location in handleTap(at: location, width: geo.size.width) }
                 .gesture(
                     DragGesture(minimumDistance: 30).onEnded { value in
                         if value.translation.width < -40 { model.nextPage() }
@@ -76,7 +97,15 @@ struct ReaderView: View {
         }
     }
 
-    private func handleTap(x: CGFloat, width: CGFloat) {
+    private func handleTap(at location: CGPoint, width: CGFloat) {
+        // A tap on an underlined name opens its card; anywhere else turns pages.
+        if showUnderlines,
+           let offset = probe.characterIndex(at: CGPoint(x: location.x - horizontalMargin, y: location.y - topMargin)),
+           let entity = model.entity(atPageOffset: offset) {
+            selectedEntity = entity
+            return
+        }
+        let x = location.x
         if x < width * 0.28 {
             model.previousPage()
         } else if x > width * 0.72 {
@@ -120,6 +149,8 @@ struct ReaderView: View {
     private var topBar: some View {
         HStack(spacing: 20) {
             Button { dismiss() } label: { Image(systemName: "chevron.down") }
+            Button { showEntities = true } label: { Image(systemName: "person.2") }
+                .accessibilityLabel("People and organizations")
             Spacer()
             Text(model.document.title)
                 .font(.subheadline.weight(.semibold))
@@ -193,6 +224,7 @@ private struct ContentsSheet: View {
 private struct ReaderSettingsSheet: View {
     @Binding var theme: ReaderTheme
     @Binding var fontSize: Double
+    @Binding var showUnderlines: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -207,6 +239,8 @@ private struct ReaderSettingsSheet: View {
                 Image(systemName: "textformat.size.larger")
             }
             .foregroundStyle(.secondary)
+
+            Toggle("Underline people and organizations", isOn: $showUnderlines)
         }
         .padding(24)
     }

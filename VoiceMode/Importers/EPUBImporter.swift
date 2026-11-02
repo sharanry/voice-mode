@@ -41,7 +41,7 @@ nonisolated enum EPUBImporter {
             chapters: chapters,
             cover: coverHref(in: opf, manifest: manifest)
                 .flatMap { try? Data(contentsOf: URL(filePath: $0.removingPercentEncoding ?? $0, relativeTo: base)) }
-                .flatMap(CoverImage.thumbnail)
+                .flatMap { CoverImage.thumbnail(from: $0) }
         )
     }
 
