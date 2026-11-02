@@ -79,7 +79,7 @@ Set these in `.env`. A pre-build script turns them into a git-ignored `Generated
 | Variable | Required | Default |
 |---|---|---|
 | `ELEVENLABS_API_KEY` | yes | |
-| `ELEVENLABS_VOICE_ID` | no | `21m00Tcm4TlvDq8ikWAM` (Rachel) |
+| `ELEVENLABS_VOICE_ID` | no | `jv41DhCf464zw0TI7I1w` |
 | `ELEVENLABS_MODEL_ID` | no | `eleven_v4_turbo` |
 | `OPENROUTER_API_KEY` | no; without it, narration is untagged | |
 | `OPENROUTER_MODEL` | no | `qwen/qwen3.8-27b` |

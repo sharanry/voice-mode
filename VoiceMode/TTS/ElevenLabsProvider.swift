@@ -1,7 +1,7 @@
 import Foundation
 
 nonisolated struct ElevenLabsProvider: TTSProvider {
-    static let defaultVoiceID = "21m00Tcm4TlvDq8ikWAM" // "Rachel", a premade voice
+    static let defaultVoiceID = "jv41DhCf464zw0TI7I1w"
     /// v4 Turbo: as expressive as v4 (understands [audio tags]) at half the credits (~0.2 per character)
     /// and about twice the speed, with the same character alignment.
     static let defaultModelID = "eleven_v4_turbo"
