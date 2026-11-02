@@ -111,3 +111,14 @@ struct ModelNameTests {
         #expect(Secrets.elevenLabsModelID.nonEmpty != nil || ElevenLabsProvider.activeModelName == "v4 Turbo")
     }
 }
+
+struct ResumePositionTests {
+    @Test func resumeStartsFromReadPositionAndClearsIt() {
+        // No provider: play(from:) fails fast, but we can see that resume chose to restart.
+        let player = NarrationPlayer(document: SampleContent.document, provider: nil, director: nil)
+        player.resumePosition = ReadingPosition(chapter: 1, offset: 40)
+        player.resume()
+        #expect(player.resumePosition == nil)
+        if case .failed = player.status {} else { Issue.record("expected resume to restart playback") }
+    }
+}

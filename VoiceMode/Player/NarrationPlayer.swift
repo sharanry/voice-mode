@@ -45,6 +45,11 @@ final class NarrationPlayer: NSObject {
     /// Narration speed at 1×, measured from synthesized clips; drives the lock screen's chapter timeline.
     @ObservationIgnored private var charsPerSecond = 14.0
 
+    /// Where to restart instead of continuing from the paused sentence: set when the reader
+    /// turns pages while paused, so every resume (mini player, lock screen, headphones) starts on
+    /// the open page. Cleared by any new `play(from:)`.
+    @ObservationIgnored var resumePosition: ReadingPosition?
+
     /// Lock screen / Dynamic Island cover. Set by `PlaybackSession`.
     @ObservationIgnored var artwork: UIImage?
     /// Called whenever the spoken position moves, so it can be saved even with the book closed.
@@ -81,6 +86,7 @@ final class NarrationPlayer: NSObject {
         }
 
         stopAudio()
+        resumePosition = nil
         let id = ChunkID(chapter: start.chapter, chunk: index)
         setPosition(start)
         status = .loading
@@ -119,7 +125,10 @@ final class NarrationPlayer: NSObject {
     }
 
     func resume() {
-        if status == .paused, let audioPlayer {
+        if let target = resumePosition {
+            resumePosition = nil
+            play(from: target)
+        } else if status == .paused, let audioPlayer {
             audioPlayer.play()
             status = .playing
             updateNowPlaying()
